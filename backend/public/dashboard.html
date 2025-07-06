@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Gestión de Productos y Pedidos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <!-- Navegación -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-800">Gestión de Productos y Pedidos</h1>
+                </div>
+                <div class="flex items-center">
+                    <!-- Menú desplegable de perfil -->
+                    <div class="relative">
+                        <button onclick="toggleProfileDropdown()" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <span class="hidden md:block">Juan Pérez</span>
+                            <i class="fas fa-chevron-down text-sm"></i>
+                        </button>
+                        
+                        <!-- Menú desplegable -->
+                        <div id="profile-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <p class="text-sm font-medium text-gray-900">Juan Pérez</p>
+                                <p class="text-sm text-gray-500">juan@ejemplo.com</p>
+                            </div>
+                            <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Cerrar sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <div class="max-w-7xl mx-auto py-6 px-4">
+        <!-- Diseño del dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Lado izquierdo - Tablas -->
+            <div class="lg:col-span-2">
+                <!-- Contenedor de tablas -->
+                <div id="table-container" class="bg-white rounded-lg shadow">
+                    <!-- Mensaje por defecto -->
+                    <div id="default-message" class="p-8 text-center text-gray-500">
+                        <i class="fas fa-table text-4xl mb-4"></i>
+                        <p class="text-lg">Haz clic en "Productos Totales" o "Pedidos Totales" para ver la tabla correspondiente</p>
+                    </div>
+
+                    <!-- Tabla de Productos -->
+                    <div id="products-section" class="hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                                <h3 class="text-lg font-medium text-gray-900">Gestión de Productos</h3>
+                                <button onclick="showAddProductModal()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm">
+                                    <i class="fas fa-plus mr-2"></i>Añadir Producto
+                                </button>
+                            </div>
+                            
+                            <!-- Filtros de Productos -->
+                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <input type="text" id="products-search" placeholder="Buscar productos..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div>
+                                    <select id="products-category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        <option value="">Todas las categorías</option>
+                                        <option value="electronics">Electrónicos</option>
+                                        <option value="accessories">Accesorios</option>
+                                        <option value="computers">Computadoras</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select id="products-price" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        <option value="">Todos los precios</option>
+                                        <option value="0-50">$0 - $50</option>
+                                        <option value="50-100">$50 - $100</option>
+                                        <option value="100-500">$100 - $500</option>
+                                        <option value="500+">$500+</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-table" class="bg-white divide-y divide-gray-200">
+                                    <!-- Los productos se cargarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Pedidos -->
+                    <div id="orders-section" class="hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                                <h3 class="text-lg font-medium text-gray-900">Gestión de Pedidos</h3>
+                                <button onclick="showAddOrderModal()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm">
+                                    <i class="fas fa-plus mr-2"></i>Crear Pedido
+                                </button>
+                            </div>
+                            
+                            <!-- Filtros de Pedidos -->
+                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div>
+                                    <input type="text" id="orders-search" placeholder="Buscar pedidos..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div>
+                                    <select id="orders-status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        <option value="">Todos los estados</option>
+                                        <option value="pending">Pendiente</option>
+                                        <option value="processing">En proceso</option>
+                                        <option value="completed">Completado</option>
+                                        <option value="cancelled">Cancelado</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <input type="date" id="orders-date" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div>
+                                    <select id="orders-payment" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        <option value="">Todos los métodos</option>
+                                        <option value="credit_card">Tarjeta de crédito</option>
+                                        <option value="debit_card">Tarjeta de débito</option>
+                                        <option value="paypal">PayPal</option>
+                                        <option value="bank_transfer">Transferencia bancaria</option>
+                                        <option value="cash">Efectivo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pedido #</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pago</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-table" class="bg-white divide-y divide-gray-200">
+                                    <!-- Los pedidos se cargarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lado derecho - Tarjetas de estadísticas -->
+            <div class="lg:col-span-1">
+                <div class="space-y-6">
+                    <!-- Tarjeta de Productos Totales -->
+                    <div onclick="showTable('products')" class="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200 border-l-4 border-blue-500">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-500">
+                                <i class="fas fa-box text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Productos Totales</p>
+                                <p class="text-2xl font-bold text-gray-900" id="total-products">0</p>
+                                <p class="text-xs text-blue-600 mt-1">Haz clic para ver productos</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tarjeta de Pedidos Totales -->
+                    <div onclick="showTable('orders')" class="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200 border-l-4 border-green-500">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-500">
+                                <i class="fas fa-shopping-cart text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Pedidos Totales</p>
+                                <p class="text-2xl font-bold text-gray-900" id="total-orders">0</p>
+                                <p class="text-xs text-green-600 mt-1">Haz clic para ver pedidos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Añadir Producto -->
+    <div id="add-product-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Añadir Nuevo Producto</h3>
+                <form id="add-product-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+                            <input type="text" name="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">SKU</label>
+                            <input type="text" name="sku" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Categoría</label>
+                            <select name="category" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Seleccionar categoría</option>
+                                <option value="electronics">Electrónicos</option>
+                                <option value="accessories">Accesorios</option>
+                                <option value="computers">Computadoras</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Precio</label>
+                            <input type="number" name="price" step="0.01" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Cantidad en Stock</label>
+                            <input type="number" name="stock_quantity" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <textarea name="description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideAddProductModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancelar</button>
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Añadir Producto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración
+        const API_BASE_URL = 'http://localhost:8000/api/v1';
+        
+        // Datos de ejemplo con propiedades mejoradas
+        let sampleProducts = [
+            { id: 1, name: 'Laptop Pro 15"', sku: 'LAP-PRO-15', category: 'computers', price: 1299.99, stock_quantity: 25, status: true, description: 'Laptop de alto rendimiento' },
+            { id: 2, name: 'Ratón Inalámbrico', sku: 'MOUSE-WL-01', category: 'accessories', price: 29.99, stock_quantity: 100, status: true, description: 'Ratón ergonómico inalámbrico' },
+            { id: 3, name: 'Teclado Mecánico', sku: 'KB-MECH-RGB', category: 'accessories', price: 89.99, stock_quantity: 8, status: true, description: 'Teclado con retroiluminación RGB' },
+            { id: 4, name: 'Monitor 4K 27"', sku: 'MON-4K-27', category: 'electronics', price: 399.99, stock_quantity: 15, status: true, description: 'Monitor 27 pulgadas 4K' },
+            { id: 5, name: 'Hub USB-C', sku: 'HUB-USBC-7', category: 'accessories', price: 49.99, stock_quantity: 75, status: true, description: 'Hub USB-C 7 en 1' },
+            { id: 6, name: 'Smartphone Pro', sku: 'PHONE-PRO-01', category: 'electronics', price: 899.99, stock_quantity: 5, status: true, description: 'Último modelo de smartphone' }
+        ];
+
+        let sampleOrders = [
+            { id: 1, order_number: 'PED-001', customer_name: 'Juan Pérez', customer_email: 'juan@ejemplo.com', total_amount: 1329.98, status: 'completed', payment_method: 'credit_card', created_at: '2024-01-15' },
+            { id: 2, order_number: 'PED-002', customer_name: 'María García', customer_email: 'maria@ejemplo.com', total_amount: 89.99, status: 'pending', payment_method: 'paypal', created_at: '2024-01-16' },
+            { id: 3, order_number: 'PED-003', customer_name: 'Carlos López', customer_email: 'carlos@ejemplo.com', total_amount: 449.98, status: 'processing', payment_method: 'debit_card', created_at: '2024-01-17' },
+            { id: 4, order_number: 'PED-004', customer_name: 'Ana Martínez', customer_email: 'ana@ejemplo.com', total_amount: 1199.99, status: 'completed', payment_method: 'bank_transfer', created_at: '2024-01-18' },
+            { id: 5, order_number: 'PED-005', customer_name: 'Luis Rodríguez', customer_email: 'luis@ejemplo.com', total_amount: 299.99, status: 'cancelled', payment_method: 'credit_card', created_at: '2024-01-19' }
+        ];
+
+        // Funciones de navegación y perfil
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                alert('Aquí se implementaría la lógica de cierre de sesión');
+                // Implementar lógica real de cierre de sesión
+            }
+        }
+
+        // Cerrar menú desplegable al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('profile-dropdown');
+            const button = event.target.closest('button');
+            
+            if (!button || !button.onclick || button.onclick.toString().indexOf('toggleProfileDropdown') === -1) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Funciones para mostrar tablas
+        function showTable(type) {
+            // Ocultar todas las secciones
+            document.getElementById('default-message').classList.add('hidden');
+            document.getElementById('products-section').classList.add('hidden');
+            document.getElementById('orders-section').classList.add('hidden');
+            
+            // Mostrar la sección seleccionada
+            if (type === 'products') {
+                document.getElementById('products-section').classList.remove('hidden');
+                loadProducts();
+                setupProductsFilters();
+            } else if (type === 'orders') {
+                document.getElementById('orders-section').classList.remove('hidden');
+                loadOrders();
+                setupOrdersFilters();
+            }
+        }
+
+        // Funciones para productos
+        function loadProducts(filters = {}) {
+            let filteredProducts = [...sampleProducts];
+            
+            // Aplicar filtros
+            if (filters.search) {
+                filteredProducts = filteredProducts.filter(p => 
+                    p.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+                    p.sku.toLowerCase().includes(filters.search.toLowerCase())
+                );
+            }
+            
+            if (filters.category) {
+                filteredProducts = filteredProducts.filter(p => p.category === filters.category);
+            }
+            
+            if (filters.price) {
+                const [min, max] = filters.price.split('-').map(p => p.replace('+', ''));
+                filteredProducts = filteredProducts.filter(p => {
+                    if (max) {
+                        return p.price >= parseFloat(min) && p.price <= parseFloat(max);
+                    } else {
+                        return p.price >= parseFloat(min);
+                    }
+                });
+            }
+            
+            const productsHtml = filteredProducts.map(product => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">${product.name}</div>
+                            <div class="text-sm text-gray-500">${product.description}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.sku}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 capitalize">${product.category === 'computers' ? 'Computadoras' : 
+                                                                                                      product.category === 'electronics' ? 'Electrónicos' : 
+                                                                                                      'Accesorios'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$${product.price.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm ${product.stock_quantity <= 10 ? 'text-red-600 font-medium' : 'text-gray-900'}">${product.stock_quantity}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full ${product.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${product.status ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="editProduct(${product.id})" class="text-blue-600 hover:text-blue-900 mr-3">Editar</button>
+                        <button onclick="deleteProduct(${product.id})" class="text-red-600 hover:text-red-900">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('products-table').innerHTML = productsHtml;
+        }
+
+        // Funciones para pedidos
+        function loadOrders(filters = {}) {
+            let filteredOrders = [...sampleOrders];
+            
+            // Aplicar filtros
+            if (filters.search) {
+                filteredOrders = filteredOrders.filter(o => 
+                    o.order_number.toLowerCase().includes(filters.search.toLowerCase()) ||
+                    o.customer_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+                    o.customer_email.toLowerCase().includes(filters.search.toLowerCase())
+                );
+            }
+            
+            if (filters.status) {
+                filteredOrders = filteredOrders.filter(o => o.status === filters.status);
+            }
+            
+            if (filters.date) {
+                filteredOrders = filteredOrders.filter(o => o.created_at === filters.date);
+            }
+            
+            if (filters.payment) {
+                filteredOrders = filteredOrders.filter(o => o.payment_method === filters.payment);
+            }
+            
+            const ordersHtml = filteredOrders.map(order => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.order_number}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">${order.customer_name}</div>
+                            <div class="text-sm text-gray-500">${order.customer_email}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$${order.total_amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}">${order.status === 'pending' ? 'Pendiente' :
+                                                                                                     order.status === 'processing' ? 'En proceso' :
+                                                                                                     order.status === 'completed' ? 'Completado' :
+                                                                                                     'Cancelado'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">${order.payment_method === 'credit_card' ? 'Tarjeta crédito' :
+                                                                                                          order.payment_method === 'debit_card' ? 'Tarjeta débito' :
+                                                                                                          order.payment_method === 'bank_transfer' ? 'Transferencia' :
+                                                                                                          order.payment_method}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.created_at}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="viewOrder(${order.id})" class="text-blue-600 hover:text-blue-900 mr-3">Ver</button>
+                        <button onclick="editOrder(${order.id})" class="text-green-600 hover:text-green-900">Editar</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('orders-table').innerHTML = ordersHtml;
+        }
+
+        // Configuración de filtros
+        function setupProductsFilters() {
+            const searchInput = document.getElementById('products-search');
+            const categorySelect = document.getElementById('products-category');
+            const priceSelect = document.getElementById('products-price');
+            
+            const applyFilters = () => {
+                const filters = {
+                    search: searchInput.value,
+                    category: categorySelect.value,
+                    price: priceSelect.value
+                };
+                loadProducts(filters);
+            };
+            
+            searchInput.addEventListener('input', applyFilters);
+            categorySelect.addEventListener('change', applyFilters);
+            priceSelect.addEventListener('change', applyFilters);
+        }
+
+        function setupOrdersFilters() {
+            const searchInput = document.getElementById('orders-search');
+            const statusSelect = document.getElementById('orders-status');
+            const dateInput = document.getElementById('orders-date');
+            const paymentSelect = document.getElementById('orders-payment');
+            
+            const applyFilters = () => {
+                const filters = {
+                    search: searchInput.value,
+                    status: statusSelect.value,
+                    date: dateInput.value,
+                    payment: paymentSelect.value
+                };
+                loadOrders(filters);
+            };
+            
+            searchInput.addEventListener('input', applyFilters);
+            statusSelect.addEventListener('change', applyFilters);
+            dateInput.addEventListener('change', applyFilters);
+            paymentSelect.addEventListener('change', applyFilters);
+        }
+
+        // Estadísticas del dashboard
+        function loadDashboardStats() {
+            const totalProducts = sampleProducts.length;
+            const totalOrders = sampleOrders.length;
+
+            document.getElementById('total-products').textContent = totalProducts;
+            document.getElementById('total-orders').textContent = totalOrders;
+        }
+
+        // Funciones para modales
+        function showAddProductModal() {
+            document.getElementById('add-product-modal').classList.remove('hidden');
+        }
+
+        function hideAddProductModal() {
+            document.getElementById('add-product-modal').classList.add('hidden');
+            document.getElementById('add-product-form').reset();
+        }
+
+        function showAddOrderModal() {
+            alert('Aquí se abriría el modal para crear pedidos. Esto conectaría con tu API de Laravel.');
+        }
+
+        // Funciones utilitarias
+        function getStatusColor(status) {
+            const colors = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'processing': 'bg-blue-100 text-blue-800',
+                'completed': 'bg-green-100 text-green-800',
+                'cancelled': 'bg-red-100 text-red-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function editProduct(id) {
+            alert(`Editar producto ${id} - Esto conectaría con tu API de Laravel`);
+        }
+
+        function deleteProduct(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+                sampleProducts = sampleProducts.filter(p => p.id !== id);
+                loadProducts();
+                loadDashboardStats(); // Actualizar estadísticas
+                alert('¡Producto eliminado con éxito!');
+            }
+        }
+
+        function viewOrder(id) {
+            alert(`Ver pedido ${id} - Esto mostraría los detalles del pedido`);
+        }
+
+        function editOrder(id) {
+            alert(`Editar pedido ${id} - Esto conectaría con tu API de Laravel`);
+        }
+
+        // Envío de formularios
+        document.getElementById('add-product-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const newProduct = {
+                id: sampleProducts.length + 1,
+                name: formData.get('name'),
+                sku: formData.get('sku'),
+                category: formData.get('category'),
+                price: parseFloat(formData.get('price')),
+                stock_quantity: parseInt(formData.get('stock_quantity')),
+                status: true,
+                description: formData.get('description')
+            };
+            
+            sampleProducts.push(newProduct);
+            hideAddProductModal();
+            loadProducts();
+            loadDashboardStats(); // Actualizar estadísticas
+            alert('¡Producto añadido con éxito!');
+        });
+
+        // Inicializar dashboard al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+        });
+    </script>
+</body>
+</html>
